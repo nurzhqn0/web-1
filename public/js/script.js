@@ -53,15 +53,14 @@ form.addEventListener("submit", async (e) => {
 });
 
 function displayResult(data) {
-  // Update result values
+  // update
   document.getElementById("bmiValue").textContent = data.bmi;
   document.getElementById("bmiCategory").textContent = data.category;
   document.getElementById("resultMessage").textContent = data.message;
 
-  // Remove all Bootstrap alert classes
   resultBox.className = "alert text-center py-4";
 
-  // Add appropriate Bootstrap alert class
+  // bootstrap classes
   let alertClass, iconClass;
 
   if (data.categoryClass === "underweight") {
@@ -80,15 +79,12 @@ function displayResult(data) {
 
   resultBox.classList.add(alertClass);
 
-  // Update icon
   const icon = document.getElementById("resultIcon");
   icon.className = `bi bi-check-circle-fill display-1 ${iconClass}`;
 
-  // Show result with animation
   resultDiv.style.display = "block";
   resultDiv.classList.add("fade-in");
 
-  // Scroll to result smoothly
   resultDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
@@ -99,7 +95,7 @@ function showError(message) {
   errorDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-// Reset animation class after animation ends
+// reset animation
 resultDiv.addEventListener("animationend", () => {
   resultDiv.classList.remove("fade-in");
 });
