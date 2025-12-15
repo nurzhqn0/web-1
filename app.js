@@ -1,97 +1,109 @@
-const form = document.getElementById("bmiForm");
-const resultDiv = document.getElementById("result");
-const errorDiv = document.getElementById("error");
-const resultBox = document.getElementById("resultBox");
+const express = require("express");
+const path = require("path");
+const app = express();
+const PORT = 3000;
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-  const weight = parseFloat(document.getElementById("weight").value);
-  const height = parseFloat(document.getElementById("height").value);
+// CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  resultDiv.style.display = "none";
-  errorDiv.style.display = "none";
-
-  if (!weight || !height) {
-    showError("Please enter both weight and height.");
-    return;
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
   }
 
-  if (weight <= 0 || height <= 0) {
-    showError("Weight and height must be positive numbers.");
-    return;
-  }
+  next();
+});
 
-  if (height > 3) {
-    showError(
-      "Height seems too large. Please enter height in meters (e.g., 1.75)."
-    );
-    return;
-  }
+app.use("/public", express.static(path.join(__dirname, "public")));
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.post("/calculate-bmi", (req, res) => {
   try {
-    const response = await fetch("http://localhost:3000/calculate-bmi", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ weight, height }),
-    });
+    const { weight, height } = req.body;
 
-    const data = await response.json();
-
-    if (response.ok) {
-      displayResult(data);
-    } else {
-      showError(data.error || "An error occurred while calculating BMI.");
+    if (!weight || !height) {
+      return res.status(400).json({
+        error: "Please provide both weight and height.",
+      });
     }
+
+    const weightNum = parseFloat(weight);
+    const heightNum = parseFloat(height);
+
+    if (isNaN(weightNum) || isNaN(heightNum)) {
+      return res.status(400).json({
+        error: "Weight and height must be valid numbers.",
+      });
+    }
+
+    if (weightNum <= 0 || heightNum <= 0) {
+      return res.status(400).json({
+        error: "Weight and height must be positive numbers.",
+      });
+    }
+
+    if (heightNum > 3) {
+      return res.status(400).json({
+        error: "Height seems too large. Please enter height in meters.",
+      });
+    }
+
+    const bmi = (weightNum / (heightNum * heightNum)).toFixed(1);
+
+    // category
+    let category, categoryClass, message;
+
+    if (bmi < 18.5) {
+      category = "Underweight";
+      categoryClass = "underweight";
+      message =
+        "You may need to gain weight. Consult with a healthcare provider for personalized advice.";
+    } else if (bmi >= 18.5 && bmi < 25) {
+      category = "Normal Weight";
+      categoryClass = "normal";
+      message =
+        "You have a healthy weight. Keep up the good work with a balanced diet and regular exercise!";
+    } else if (bmi >= 25 && bmi < 30) {
+      category = "Overweight";
+      categoryClass = "overweight";
+      message =
+        "You may want to consider a healthier diet and more physical activity. Consult a healthcare provider.";
+    } else {
+      category = "Obese";
+      categoryClass = "obese";
+      message =
+        "Your health may be at risk. Please consult with a healthcare provider for guidance.";
+    }
+
+    // send response
+    res.json({
+      bmi: bmi,
+      category: category,
+      categoryClass: categoryClass,
+      message: message,
+    });
   } catch (error) {
-    showError("Unable to connect to server. Please try again.");
-    console.error("Error:", error);
+    console.error("Error calculating BMI:", error);
+    res.status(500).json({
+      error: "An error occurred while calculating BMI.",
+    });
   }
 });
 
-function displayResult(data) {
-  // Update result values
-  document.getElementById("bmiValue").textContent = data.bmi;
-  document.getElementById("bmiCategory").textContent = data.category;
-  document.getElementById("resultMessage").textContent = data.message;
+// 404
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
 
-  // Remove all category classes
-  resultBox.className = "result-box";
-
-  // Add appropriate category class
-  resultBox.classList.add(`alert-${data.categoryClass}`);
-
-  // Update icon color
-  const icon = document.getElementById("resultIcon");
-  icon.className = "bi bi-check-circle-fill";
-
-  if (data.categoryClass === "underweight") {
-    icon.style.color = "#ffc107";
-  } else if (data.categoryClass === "normal") {
-    icon.style.color = "#28a745";
-  } else if (data.categoryClass === "overweight") {
-    icon.style.color = "#ff8c00";
-  } else if (data.categoryClass === "obese") {
-    icon.style.color = "#dc3545";
-  }
-
-  // Show result with animation
-  resultDiv.style.display = "block";
-  resultDiv.classList.add("fade-in");
-
-  // Scroll to result
-  resultDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-function showError(message) {
-  document.getElementById("errorMessage").textContent = message;
-  errorDiv.style.display = "block";
-  errorDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-// Reset animation class
-resultDiv.addEventListener("animationend", () => {
-  resultDiv.classList.remove("fade-in");
+// run app
+app.listen(PORT, () => {
+  console.log(`BMI Calculator server running on http://localhost:${PORT}`);
 });
