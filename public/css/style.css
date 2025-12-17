@@ -68,7 +68,6 @@ body {
   color: #721c24;
 }
 
-/* Result icon colors */
 .result-icon .text-warning {
   color: #ffc107 !important;
 }
@@ -134,7 +133,6 @@ body {
   border-bottom: none;
 }
 
-/* Remove number input spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -145,7 +143,6 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Responsive adjustments */
 @media (max-width: 576px) {
   .card-body {
     padding: 2rem 1.5rem !important;
